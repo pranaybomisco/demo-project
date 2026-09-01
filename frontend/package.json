@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "switch:unoptimized": "node ../scripts/toggle-mode.js unoptimized",
+    "switch:optimized": "node ../scripts/toggle-mode.js optimized",
+    "switch:toggle": "node ../scripts/toggle-mode.js toggle"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",
