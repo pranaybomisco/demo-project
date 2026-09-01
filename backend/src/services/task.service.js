@@ -1,6 +1,8 @@
 import { Op, Sequelize } from 'sequelize';
 import { Task, Project, User, ProjectMember } from '../models/index.js';
 import { NotFoundError, AuthorizationError, ValidationError } from '../errors/apperror.js';
+import { BACKEND_PERF_CONFIG } from '../config/performance.config.js';
+import { logger } from '../config/logger.js';
 import {
   ERROR_MESSAGES,
   ROLES,
@@ -55,12 +57,6 @@ export class TaskService {
       });
     }
 
-    const projectInclude = {
-      model: Project,
-      as: ASSOCIATIONS.PROJECT,
-      attributes: ['id', 'name'],
-    };
-
     if (userRole !== ROLES.ADMIN) {
       const userProjects = await Project.findAll({
         attributes: ['id'],
@@ -78,6 +74,59 @@ export class TaskService {
     }
 
     const whereClause = whereConditions.length > 0 ? { [Op.and]: whereConditions } : {};
+
+    // 💥 UNOPTIMIZED BACKEND: N+1 Database Query Anti-Pattern
+    if (BACKEND_PERF_CONFIG.mode === 'unoptimized') {
+      logger.warn(`[UNOPTIMIZED BACKEND] Executing N+1 Queries for ${limitNum} tasks...`);
+      const { count: total, rows: rawTasks } = await Task.findAndCountAll({
+        where: whereClause,
+        order: [[sortBy, sortOrder.toUpperCase() === SORT_ORDERS.ASC ? SORT_ORDERS.ASC : SORT_ORDERS.DESC]],
+        limit: limitNum,
+        offset,
+      });
+
+      // Fire separate individual SQL queries per task in a serial loop (N+1 queries!)
+      const tasks = [];
+      for (const t of rawTasks) {
+        const taskJson = t.toJSON();
+        const project = await Project.findByPk(t.projectId, { attributes: ['id', 'name'] });
+        const creator = await User.findByPk(t.creatorId, { attributes: ['id', 'name', 'email', 'avatarUrl'] });
+        const assignee = t.assigneeId ? await User.findByPk(t.assigneeId, { attributes: ['id', 'name', 'email', 'avatarUrl'] }) : null;
+
+        // In-process synchronous blocking CPU serialization
+        for (let i = 0; i < 25000; i++) {
+          Math.sqrt(i);
+        }
+
+        tasks.push({
+          ...taskJson,
+          project: project ? project.toJSON() : null,
+          creator: creator ? creator.toJSON() : null,
+          assignee: assignee ? assignee.toJSON() : null,
+        });
+      }
+
+      if (limitNum >= 500) {
+        await new Promise((resolve) => setTimeout(resolve, 360));
+      }
+
+      return {
+        tasks,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      };
+    }
+
+    // 🚀 OPTIMIZED BACKEND: Single atomic query with indexed JOINs & projections
+    const projectInclude = {
+      model: Project,
+      as: ASSOCIATIONS.PROJECT,
+      attributes: ['id', 'name'],
+    };
 
     const { count: total, rows: tasks } = await Task.findAndCountAll({
       where: whereClause,
@@ -100,9 +149,6 @@ export class TaskService {
       distinct: true,
     });
 
-    // Real-world performance demonstration:
-    // When requesting massive datasets (limit >= 500 without server-side pagination),
-    // simulate real-world un-indexed full table scan & relational hydration overhead (~350ms).
     if (limitNum >= 500) {
       await new Promise((resolve) => setTimeout(resolve, 360));
     }

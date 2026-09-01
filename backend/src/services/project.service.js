@@ -1,6 +1,8 @@
 import { Op, Sequelize } from 'sequelize';
 import { Project, User, ProjectMember, Task } from '../models/index.js';
 import { NotFoundError, AuthorizationError, ValidationError } from '../errors/apperror.js';
+import { BACKEND_PERF_CONFIG } from '../config/performance.config.js';
+import { logger } from '../config/logger.js';
 import { ERROR_MESSAGES, ROLES, APP_DEFAULTS, ASSOCIATIONS, SORT_ORDERS, DB_FIELDS } from '../constants/index.js';
 
 export class ProjectService {
@@ -40,6 +42,56 @@ export class ProjectService {
       orderClause = [[Sequelize.literal(`"${sortBy}"`), validSortOrder]];
     }
 
+    // 💥 UNOPTIMIZED BACKEND: N+1 Database Query Anti-Pattern
+    if (BACKEND_PERF_CONFIG.mode === 'unoptimized') {
+      logger.warn(`[UNOPTIMIZED BACKEND] Executing N+1 Queries for ${limitNum} projects...`);
+      const { count: total, rows: rawProjects } = await Project.findAndCountAll({
+        where: whereClause,
+        order: [[DB_FIELDS.UPDATED_AT, validSortOrder]],
+        limit: limitNum,
+        offset,
+      });
+
+      const formattedProjects = [];
+      for (const p of rawProjects) {
+        const json = p.toJSON();
+        const owner = await User.findByPk(p.ownerId, { attributes: ['id', 'name', 'email', 'avatarUrl'] });
+        const taskCount = await Task.count({ where: { projectId: p.id } });
+        const memberCount = await ProjectMember.count({ where: { projectId: p.id } });
+
+        // Synchronous main-thread CPU work
+        for (let i = 0; i < 20000; i++) {
+          Math.sqrt(i);
+        }
+
+        formattedProjects.push({
+          ...json,
+          owner: owner ? owner.toJSON() : null,
+          taskCount,
+          memberCount,
+          _count: {
+            tasks: taskCount,
+            members: memberCount,
+          },
+        });
+      }
+
+      if (limitNum >= 500) {
+        await new Promise((resolve) => setTimeout(resolve, 320));
+      }
+
+      return {
+        projects: formattedProjects,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum),
+        },
+      };
+    }
+
+    // 🚀 OPTIMIZED BACKEND: Single query with database-level subqueries and JOINs
     const { count: total, rows: projects } = await Project.findAndCountAll({
       where: whereClause,
       include: [
@@ -67,9 +119,6 @@ export class ProjectService {
       distinct: true,
     });
 
-    // Real-world performance demonstration:
-    // When requesting massive datasets (limit >= 500 without server-side pagination),
-    // simulate real-world un-indexed full table scan & relational hydration overhead (~320ms).
     if (limitNum >= 500) {
       await new Promise((resolve) => setTimeout(resolve, 320));
     }
