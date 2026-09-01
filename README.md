@@ -2,6 +2,8 @@
 
 A modern, full-stack, enterprise-grade **Project and Task Management Platform** built with **JavaScript (ES Modules)**, demonstrating clean MVC + Service architecture, PostgreSQL data access with Sequelize, Redux Toolkit state management, interactive Swagger API documentation, table shimmer skeletons, and centralized constant management (zero magic strings).
 
+> 📖 **Looking for the Tech-Talk Presentation Handbook?** Check out [**`TECH_TALK_GUIDE.md`**](./TECH_TALK_GUIDE.md) for live demo scripts, performance profiling steps, and deep-dive comparisons.
+
 ---
 
 ## 🏛️ Clean Architecture
@@ -34,12 +36,15 @@ demo-project/
 │   │   ├── redux/            # Store & slices (auth, projects, tasks, dashboard, toast)
 │   │   ├── services/         # Axios API client & domain services
 │   │   ├── routers/          # AppRouter.jsx & ProtectedRoute.jsx
-│   │   ├── views/            # Layered presentation components (auth, dashboard, projects, tasks, profile, components)
+│   │   ├── views/            # 🚀 Clean presentation components (DataTable, FilterBar, FormModal)
+│   │   ├── unoptimized/      # ⚠️ Tech-talk anti-pattern demonstration suite
 │   │   ├── pages/            # Declarative page shells (Dashboard, Projects, Tasks, Profile, Login, Register)
 │   │   ├── index.css         # Modern glassmorphism design system & skeleton animations
 │   │   └── main.jsx          # Frontend entrypoint
 │   └── package.json
 │
+├── scripts/
+│   └── toggle-mode.js        # 🔄 Architecture mode switcher script
 ├── postgres/                 # Docker Compose PostgreSQL service
 ├── docker-compose.yml        # Multi-container orchestration
 └── package.json              # Monorepo root workspace scripts
@@ -52,18 +57,29 @@ demo-project/
 1. **Clean Layered Separation of Concerns**:
    - **Pages (`src/pages/`)**: Declarative shells handling routing.
    - **Views (`src/views/`)**: Domain presentation views, widgets, form modals, table views, and kanban boards.
-   - **Services & Handlers (`src/services/`, `src/handlers/`)**: Decoupled network and error mapping.
+   - **Common Components (`src/views/components/`)**: Shared generic `DataTable`, `FilterBar`, and `FormModal`.
 2. **Interactive Query Parameters & Table Skeletons**:
    - URL-synchronized pagination (`?page=`, `?limit=`), search query, sorting (`?sortBy=`, `?sortOrder=`), and view modes (`?view=grid` / `?view=table`).
    - Smooth, non-intrusive shimmering skeleton loading states across all tables and cards.
-3. **Collapsible Sidebar & Mobile Hamburger Drawer**:
+3. **Live Tech-Talk Architecture Switcher**:
+   - Easily swap between **Fully Optimized**, **No-Query-Params**, and **Unoptimized Heavy Load** modes with 1 command.
+4. **Collapsible Sidebar & Mobile Hamburger Drawer**:
    - Responsive collapsible navigation sidebar with icon mode and mobile glassmorphic backdrop.
-4. **Editable User Profiles**:
+5. **Editable User Profiles**:
    - Update full name, email address, and toggleable password change sub-form with real-time feedback.
-5. **1,000+ Record Seed Dataset**:
+6. **1,000+ Record Seed Dataset**:
    - Generates 28 team members, 45 software engineering projects, and 1,000 realistic tasks across various priorities and timeline distributions.
-6. **Zero Magic Strings**:
-   - Every route, API endpoint, message, error code, label, and role is defined in centralized constants.
+
+---
+
+## 🔄 Live Architecture Mode Switcher
+
+| Mode | Command | Description |
+| :--- | :--- | :--- |
+| **🚀 Optimized** | `npm run switch:optimized` | Full clean architecture: URL sync (`?page=2`), debounced search, `DataTable` skeletons, 60 FPS. |
+| **⚠️ No Query Params** | `npm run switch:no-query-params` | Demonstrates state loss on refresh (`F5`) and non-shareable URLs when pagination uses only local state. |
+| **💥 Unoptimized** | `npm run switch:unoptimized` | Demonstrates main-thread blocking (`80ms - 200ms`), 1,000 unvirtualized DOM rows, and typing jank. |
+| **🔁 Toggle** | `npm run switch:toggle` | Automatically cycles through the 3 modes. |
 
 ---
 
@@ -133,6 +149,10 @@ All seeded demo accounts use password: `Password123!`
 | `npm run dev` | Runs backend and frontend concurrently in development mode |
 | `npm run seed` | Seeds the PostgreSQL database with 28 users, 45 projects, and 1,000 tasks |
 | `npm run build` | Builds backend with `esbuild` and frontend with `Vite` for production |
+| `npm run switch:optimized` | Activates clean architecture & URL query parameter synchronization |
+| `npm run switch:no-query-params` | Activates local-state pagination demo without URL query parameters |
+| `npm run switch:unoptimized` | Activates heavy unvirtualized DOM & in-render CPU blocking demo |
+| `npm run switch:toggle` | Cycles through all 3 architecture modes |
 | `npm run install:all` | Installs dependencies across root, backend, and frontend packages |
 | `npm run docker:up` | Builds and starts multi-container Docker Compose environment |
 | `npm run docker:down` | Stops and removes Docker Compose containers |
