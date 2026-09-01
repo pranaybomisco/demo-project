@@ -98,7 +98,7 @@ export const SORT_ORDERS = {
 
 export const APP_DEFAULTS = {
   PAGE: 1,
-  LIMIT_PROJECTS: 10,
+  LIMIT_PROJECTS: 6,
   LIMIT_TASKS: 20,
   SALT_ROUNDS: 10,
   BODY_LIMIT: '10kb',

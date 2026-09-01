@@ -15,10 +15,11 @@ This folder contains intentional **unoptimized views and components** created sp
 | **State Synchronization** | URL search parameters (`?page=`, `?sortBy=`, `?view=`) for shareable, reproducible states. | Ephemeral local state without URL sync; lost on refresh. | Broken back/forward browser navigation, inability to share filtered views. |
 | **Loading UX** | Shimmering table skeletons and non-blocking top progress bar. | Blocking full-page spinners, UI flashes, or zero visual feedback during state updates. | Perceived sluggishness, layout shifts (CLS), user frustration. |
 | **Component Re-renders** | Layered atomic views (`src/views/`) isolated from parent shell components. | Giant monolithic components where any state change re-renders the entire subtree. | Cascading re-render waterfalls, high CPU utilization. |
+| **Bundle Architecture** | Route & Component Code Splitting (`React.lazy` + `Suspense` + dynamic imports). | Monolithic Eager Loading: Every route & dialog bundled synchronously upfront. | Higher initial load payload, slower Total Blocking Time (TBT), memory waste. |
 
 ---
 
-## 🔍 The 7 Deadly Performance Anti-Patterns Demonstrated
+## 🔍 The 8 Deadly Performance Anti-Patterns Demonstrated
 
 ### 1. In-Render Synchronous Blocking Computations
 - **File:** [`components/unoptimizedtable.jsx`](./components/unoptimizedtable.jsx)
@@ -40,6 +41,12 @@ This folder contains intentional **unoptimized views and components** created sp
 - **Problem:** Firing continuous interval-based state changes without proper debounce or cleanup.
 - **Result:** Constant React reconciliations and increasing memory footprint over time.
 
+### 5. Monolithic Eager Bundles (No Code Splitting)
+- **Files:** [`routers/eagerrouter.jsx`](../routers/eagerrouter.jsx) vs [`routers/lazyrouter.jsx`](../routers/lazyrouter.jsx)
+- **Problem:** Bundling the entire application into a single synchronous chunk.
+- **Result:** First-time visitors download code for all routes and heavy modals they may never visit.
+- **Commands:** `npm run switch:codesplit` vs `npm run switch:no-codesplit` and `npm run analyze:bundles`.
+
 ---
 
 ## 🎬 How to Demonstrate in a Tech Talk
@@ -53,3 +60,7 @@ This folder contains intentional **unoptimized views and components** created sp
    - Enable **Paint Flashing** and **Frame Rendering Stats (FPS Meter)**.
    - In the unoptimized view, observe the full table repainting and FPS dropping drastically.
    - Switch back to the optimized [`TasksView`](../views/tasks/tasksview.jsx) and observe instant 60 FPS performance!
+4. **Demonstrate Code Splitting in Chrome DevTools > Network Tab**:
+   - Run `npm run switch:codesplit` and open the Network tab (Filter: `JS`).
+   - Navigate between routes and observe individual `*page-*.js` chunks loaded on-demand.
+   - Click "Audit Engine (Lazy Chunk)" to demonstrate component-level lazy loading!

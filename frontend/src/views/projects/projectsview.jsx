@@ -33,12 +33,10 @@ export const ProjectsView = ({ isModalOpen, setIsModalOpen, selectedProject, set
     setView,
     clearFilters,
   } = useQueryParams({
-    defaultOverrides: {
-      limit: 12,
-      sortBy: 'updatedAt',
-      sortOrder: 'desc',
-      view: 'grid',
-    },
+    limit: 6,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+    view: 'grid',
   });
 
   const [projectToDelete, setProjectToDelete] = useState(null);
@@ -75,7 +73,7 @@ export const ProjectsView = ({ isModalOpen, setIsModalOpen, selectedProject, set
 
   return (
     <div>
-      {/* Filter Bar */}
+      {/* URL-Synchronized Filter & Control Bar */}
       <ProjectFilterBar
         search={search}
         onSearchChange={setSearch}

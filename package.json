@@ -14,9 +14,16 @@
     "switch:no-query-params": "node scripts/toggle-mode.js no-query-params",
     "switch:unoptimized": "node scripts/toggle-mode.js unoptimized",
     "switch:toggle": "node scripts/toggle-mode.js toggle",
+    "switch:codesplit": "node scripts/toggle-codesplit.js lazy",
+    "switch:no-codesplit": "node scripts/toggle-codesplit.js eager",
+    "switch:codesplit:toggle": "node scripts/toggle-codesplit.js toggle",
+    "switch:debounce:on": "node scripts/toggle-debounce.js on",
+    "switch:debounce:off": "node scripts/toggle-debounce.js off",
+    "switch:debounce:toggle": "node scripts/toggle-debounce.js toggle",
+    "analyze:bundles": "node scripts/analyze-bundles.js",
     "start": "npm --prefix backend run start",
-    "docker:up": "docker compose up -d --build",
-    "docker:down": "docker compose down"
+    "docker:up": "docker compose -f postgres/docker-compose.yaml up -d --build",
+    "docker:down": "docker compose -f postgres/docker-compose.yaml down"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

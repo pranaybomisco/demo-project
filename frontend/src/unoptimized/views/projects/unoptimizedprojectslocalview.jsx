@@ -27,7 +27,7 @@ export const UnoptimizedProjectsLocalView = ({
 
   // ⚠️ Local React State ONLY (no URL query params)
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(6);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('updatedAt');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -74,26 +74,23 @@ export const UnoptimizedProjectsLocalView = ({
 
   return (
     <div>
-      {/* Banner */}
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          padding: '0.75rem 1.25rem',
+          padding: '0.75rem 1rem',
           backgroundColor: 'rgba(245, 158, 11, 0.12)',
           border: '1px solid var(--color-warning)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--radius-sm)',
           marginBottom: '1.25rem',
           color: 'var(--color-warning)',
           fontSize: '0.8125rem',
           fontWeight: 600,
         }}
       >
-        <AlertCircle size={18} />
-        <span>
-          [NO QUERY PARAMS DEMO] Projects pagination is active (Page {page}), but stored only in local state. URL is not synchronized!
-        </span>
+        <span>⚠️ [NO QUERY PARAMS DEMO] Projects pagination is active (Page {page}), stored only in local state. (Live metrics in top-right HUD)</span>
       </div>
 
       {/* Filter Bar */}

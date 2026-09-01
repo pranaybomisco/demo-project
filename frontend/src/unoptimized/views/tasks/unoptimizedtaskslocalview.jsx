@@ -8,7 +8,6 @@ import { TaskFilterBar } from '../../../views/tasks/taskfilterbar.jsx';
 import { Pagination } from '../../../views/components/pagination.jsx';
 import { TaskModal } from '../../../views/tasks/taskmodal.jsx';
 import { ConfirmModal } from '../../../views/components/confirmmodal.jsx';
-import { AlertCircle, RefreshCw } from 'lucide-react';
 import { BUTTON_LABELS, UI_MESSAGES } from '../../../constants/index.js';
 
 /**
@@ -97,28 +96,23 @@ export const UnoptimizedTasksLocalView = ({
 
   return (
     <div>
-      {/* Educational Banner for Tech Talk */}
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.75rem 1.25rem',
+          gap: '0.5rem',
+          padding: '0.75rem 1rem',
           backgroundColor: 'rgba(245, 158, 11, 0.12)',
           border: '1px solid var(--color-warning)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: 'var(--radius-sm)',
           marginBottom: '1.25rem',
           color: 'var(--color-warning)',
           fontSize: '0.8125rem',
           fontWeight: 600,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertCircle size={18} />
-          <span>
-            [NO QUERY PARAMS DEMO] Pagination is working (Page {page}), but stored only in local useState. Try refreshing the page (F5) or copying the URL to observe state loss!
-          </span>
-        </div>
+        <span>⚠️ [NO QUERY PARAMS DEMO] Tasks pagination is active (Page {page}), stored only in local state. (Live metrics in top-right HUD)</span>
       </div>
 
       {/* Local-State Filter Bar */}

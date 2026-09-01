@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../../redux/slices/authslice.js';
-import { LogOut, User, Sparkles, Menu, X } from 'lucide-react';
+import { LogOut, User, Sparkles, Menu, X, Cpu } from 'lucide-react';
 import { APP_ROUTES, BUTTON_LABELS } from '../../constants/index.js';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../components/themetoggle.jsx';
+import { ApiLatencyBadge } from '../components/apilatencybadge.jsx';
+
+// 🚀 Component-Level Lazy Loading: Chunk loaded on-demand when user clicks button
+const HeavyReportModal = lazy(() => import('../components/heavyreportmodal.jsx'));
 
 export const Navbar = ({
   onToggleMobileSidebar,
@@ -12,6 +16,7 @@ export const Navbar = ({
 }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
+  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
 
   return (
     <header
@@ -55,11 +60,40 @@ export const Navbar = ({
           }}
         >
           <Sparkles size={14} />
-          <span className="header-badge-text">Demo Architecture</span>
+          <span className="header-badge-text">Clean Architecture</span>
         </div>
+
+        {/* Dynamic Code Splitting Trigger Demo */}
+        <button
+          type="button"
+          onClick={() => setIsAuditModalOpen(true)}
+          className="btn btn-secondary"
+          style={{
+            fontSize: '0.75rem',
+            padding: '0.25rem 0.65rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            borderRadius: 'var(--radius-full)',
+          }}
+          title="Demonstrates on-demand component chunk loading via dynamic import()"
+        >
+          <Cpu size={13} />
+          <span>Audit Engine (Lazy Chunk)</span>
+        </button>
       </div>
 
+      {isAuditModalOpen && (
+        <Suspense fallback={null}>
+          <HeavyReportModal
+            isOpen={isAuditModalOpen}
+            onClose={() => setIsAuditModalOpen(false)}
+          />
+        </Suspense>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+        <ApiLatencyBadge compact />
         <ThemeToggle />
 
         {user && (

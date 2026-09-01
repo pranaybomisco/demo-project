@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Card } from '../../../views/components/card.jsx';
-import { AlertTriangle, User, Mail } from 'lucide-react';
+import { User, Mail } from 'lucide-react';
 
 /**
  * ⚠️ UNOPTIMIZED PROFILE VIEW
@@ -26,6 +26,7 @@ export const UnoptimizedProfileView = () => {
 
   return (
     <Card style={{ padding: '2rem' }}>
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
@@ -41,8 +42,7 @@ export const UnoptimizedProfileView = () => {
           fontWeight: 600,
         }}
       >
-        <AlertTriangle size={18} />
-        <span>[UNOPTIMIZED PROFILE] Full-tree reconciliation on every letter typed (Total Keystroke Renders: {keystrokes})</span>
+        <span>⚠️ [UNOPTIMIZED PROFILE] Full-tree reconciliation on every keystroke (Total Keystroke Renders: {keystrokes}). (Live metrics on top-right HUD)</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

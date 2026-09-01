@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { UnoptimizedProjectsLocalView as ProjectsView } from '../unoptimized/views/projects/unoptimizedprojectslocalview.jsx';
+import { ProjectsView } from '../views/projects/projectsview.jsx';
 import { Button } from '../views/components/button.jsx';
 import { Plus } from 'lucide-react';
 import { BUTTON_LABELS, UI_MESSAGES, ROLES } from '../constants/index.js';
@@ -43,3 +43,5 @@ export const ProjectsPage = () => {
     </div>
   );
 };
+
+export default ProjectsPage;

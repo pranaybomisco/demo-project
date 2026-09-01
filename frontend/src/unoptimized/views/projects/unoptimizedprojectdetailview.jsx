@@ -4,7 +4,7 @@ import { fetchProjectDetail } from '../../../redux/slices/projectslice.js';
 import { fetchTasks } from '../../../redux/slices/taskslice.js';
 import { UnoptimizedTaskBoardView } from '../tasks/unoptimizedtaskboardview.jsx';
 import { Spinner } from '../../../views/components/spinner.jsx';
-import { FolderKanban, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { FolderKanban, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { APP_ROUTES } from '../../../constants/index.js';
 
@@ -46,6 +46,7 @@ export const UnoptimizedProjectDetailView = ({ projectId }) => {
 
   return (
     <div>
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
@@ -61,8 +62,7 @@ export const UnoptimizedProjectDetailView = ({ projectId }) => {
           fontWeight: 600,
         }}
       >
-        <AlertTriangle size={18} />
-        <span>[UNOPTIMIZED DETAIL] In-render blocking calculations and un-virtualized sprint task board</span>
+        <span>⚠️ [UNOPTIMIZED DETAIL] Duplicate in-memory fetches & in-render CPU work. (Live metrics in top-right HUD)</span>
       </div>
 
       <div style={{ marginBottom: '1.5rem' }}>

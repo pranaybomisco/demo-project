@@ -1,8 +1,11 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardMetrics } from '../../../redux/slices/dashboardslice.js';
-import { Card } from '../../../views/components/card.jsx';
-import { AlertTriangle } from 'lucide-react';
+import { StatsWidget } from '../../../views/dashboard/statswidget.jsx';
+import { StatusWidget } from '../../../views/dashboard/statuswidget.jsx';
+import { PriorityWidget } from '../../../views/dashboard/prioritywidget.jsx';
+import { OverdueTasksWidget } from '../../../views/dashboard/overduetaskswidget.jsx';
+import { RecentTasksWidget } from '../../../views/dashboard/recenttaskswidget.jsx';
 import { Spinner } from '../../../views/components/spinner.jsx';
 
 /**
@@ -12,10 +15,6 @@ export const UnoptimizedDashboardView = () => {
   const dispatch = useDispatch();
   const { metrics, isLoading } = useSelector((state) => state.dashboard);
   const [renderCount, setRenderCount] = useState(0);
-  const [renderDuration, setRenderDuration] = useState('0.0');
-
-  const startPerfTimeRef = useRef(performance.now());
-  startPerfTimeRef.current = performance.now();
 
   useEffect(() => {
     dispatch(fetchDashboardMetrics());
@@ -27,17 +26,10 @@ export const UnoptimizedDashboardView = () => {
 
     return () => clearInterval(interval);
   }, [dispatch]);
-
-  // Real CPU work in dashboard render
   let totalComputed = 0;
-  for (let i = 0; i < 400000; i++) {
+  for (let i = 0; i < 800000; i++) {
     totalComputed = ((totalComputed ^ (i * 17)) + (i & 0xff)) & 0xffffffff;
   }
-
-  useLayoutEffect(() => {
-    const elapsed = (performance.now() - startPerfTimeRef.current).toFixed(1);
-    setRenderDuration(elapsed);
-  });
 
   if (isLoading && !metrics) {
     return <Spinner fullPage message="Loading unoptimized dashboard..." />;
@@ -45,13 +37,13 @@ export const UnoptimizedDashboardView = () => {
 
   return (
     <div>
-      {/* Warning Banner */}
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.875rem 1rem',
+          gap: '0.5rem',
+          padding: '0.75rem 1rem',
           backgroundColor: 'rgba(239, 68, 68, 0.12)',
           border: '1px solid var(--color-danger)',
           borderRadius: 'var(--radius-sm)',
@@ -61,49 +53,22 @@ export const UnoptimizedDashboardView = () => {
           fontWeight: 600,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertTriangle size={18} />
-          <span>[UNOPTIMIZED VIEW] Aggressive state polling & unmemoized widget re-renders (Re-renders: {renderCount})</span>
-        </div>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.875rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-            padding: '0.2rem 0.5rem',
-            borderRadius: '4px',
-            border: '1px solid var(--color-danger)',
-          }}
-        >
-          Render Time: {renderDuration} ms
-        </span>
+        <span>⚠️ [UNOPTIMIZED VIEW] Aggressive 1.5s state polling & unmemoized widget re-renders (Re-renders: {renderCount}). (Live metrics on top-right HUD)</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
-        <Card style={{ padding: '1.25rem' }}>
-          <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>Total Tasks</h4>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.5rem' }}>
-            {metrics?.overview?.totalTasks || 0}
-          </div>
-        </Card>
-        <Card style={{ padding: '1.25rem' }}>
-          <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>Active Projects</h4>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--accent-primary)' }}>
-            {metrics?.overview?.totalProjects || 0}
-          </div>
-        </Card>
-        <Card style={{ padding: '1.25rem' }}>
-          <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>Completed Tasks</h4>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--color-success)' }}>
-            {metrics?.overview?.completedTasks || 0}
-          </div>
-        </Card>
-        <Card style={{ padding: '1.25rem' }}>
-          <h4 style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>Overdue Tasks</h4>
-          <div style={{ fontSize: '1.75rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--color-danger)' }}>
-            {metrics?.overview?.overdueTasks || 0}
-          </div>
-        </Card>
+      {/* 5 High-Level Overview Stats */}
+      <StatsWidget overview={metrics?.overview} />
+
+      {/* Distribution Widgets Grid */}
+      <div className="grid-2-col" style={{ marginBottom: '1.5rem' }}>
+        <StatusWidget statusBreakdown={metrics?.statusBreakdown} />
+        <PriorityWidget priorityBreakdown={metrics?.priorityBreakdown} />
+      </div>
+
+      {/* Task Activity & Overdue Lists */}
+      <div className="grid-2-col">
+        <OverdueTasksWidget overdueTasks={metrics?.overdueTasks} />
+        <RecentTasksWidget recentTasks={metrics?.recentTasks} />
       </div>
     </div>
   );

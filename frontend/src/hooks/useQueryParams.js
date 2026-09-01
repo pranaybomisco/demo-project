@@ -13,20 +13,22 @@ const DEFAULT_PARAMS = {
   view: 'table',
 };
 
-export const useQueryParams = (defaultOverrides) => {
+export const useQueryParams = (defaultOverrides = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Parse current params directly from searchParams
   const searchParamsString = searchParams.toString();
+  const overridesKey = JSON.stringify(defaultOverrides);
 
   const params = useMemo(() => {
     const sp = new URLSearchParams(searchParamsString);
-    const defaults = { ...DEFAULT_PARAMS, ...defaultOverrides };
+    const actualOverrides = defaultOverrides?.defaultOverrides || defaultOverrides || {};
+    const defaults = { ...DEFAULT_PARAMS, ...actualOverrides };
 
     const pageStr = sp.get('page');
     const limitStr = sp.get('limit');
     const page = pageStr ? Math.max(1, parseInt(pageStr, 10) || 1) : defaults.page;
-    const limit = limitStr ? Math.max(1, parseInt(limitStr, 10) || 10) : defaults.limit;
+    const limit = limitStr ? Math.max(1, parseInt(limitStr, 10) || defaults.limit) : defaults.limit;
     const sortBy = sp.get('sortBy') || defaults.sortBy;
     const sortOrder = (sp.get('sortOrder') || defaults.sortOrder).toLowerCase();
     const search = sp.get('search') || '';
@@ -46,7 +48,7 @@ export const useQueryParams = (defaultOverrides) => {
       projectId,
       view,
     };
-  }, [searchParamsString]);
+  }, [searchParamsString, overridesKey]);
 
   // Clean object for API consumption
   const apiParams = useMemo(() => {

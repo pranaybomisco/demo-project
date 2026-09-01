@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UnoptimizedTasksLocalView as TasksView } from '../unoptimized/views/tasks/unoptimizedtaskslocalview.jsx';
+import { TasksView } from '../views/tasks/tasksview.jsx';
 import { Button } from '../views/components/button.jsx';
 import { Plus } from 'lucide-react';
 import { BUTTON_LABELS, UI_MESSAGES } from '../constants/index.js';
@@ -37,3 +37,5 @@ export const TasksPage = () => {
     </div>
   );
 };
+
+export default TasksPage;

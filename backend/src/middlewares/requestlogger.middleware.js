@@ -8,6 +8,7 @@ export const requestLogger = (req, res, next) => {
   res.setHeader(HTTP_HEADERS.REQUEST_ID, requestId);
 
   const start = Date.now();
+  req._startTime = start;
   res.on('finish', () => {
     const duration = Date.now() - start;
     logger.http(`${req.method} ${req.originalUrl} ${res.statusCode} (${duration}ms)`);

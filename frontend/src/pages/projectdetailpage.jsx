@@ -7,3 +7,5 @@ export const ProjectDetailPage = () => {
 
   return <ProjectDetailView projectId={id} />;
 };
+
+export default ProjectDetailPage;

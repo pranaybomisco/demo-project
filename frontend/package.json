@@ -10,7 +10,11 @@
     "switch:optimized": "node ../scripts/toggle-mode.js optimized",
     "switch:no-query-params": "node ../scripts/toggle-mode.js no-query-params",
     "switch:unoptimized": "node ../scripts/toggle-mode.js unoptimized",
-    "switch:toggle": "node ../scripts/toggle-mode.js toggle"
+    "switch:toggle": "node ../scripts/toggle-mode.js toggle",
+    "switch:codesplit": "node ../scripts/toggle-codesplit.js lazy",
+    "switch:no-codesplit": "node ../scripts/toggle-codesplit.js eager",
+    "switch:codesplit:toggle": "node ../scripts/toggle-codesplit.js toggle",
+    "analyze:bundles": "node ../scripts/analyze-bundles.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",

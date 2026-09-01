@@ -19,9 +19,38 @@ export const tokenService = {
   },
 };
 
-// Request Interceptor: Injects Bearer token
+// Global API latency metrics tracker
+const metricsListeners = new Set();
+let latestApiMetric = {
+  durationMs: 0,
+  serverDurationMs: 0,
+  url: '',
+  method: 'GET',
+  timestamp: Date.now(),
+};
+
+export const apiMetricsTracker = {
+  getLatest: () => latestApiMetric,
+  subscribe: (listener) => {
+    metricsListeners.add(listener);
+    return () => metricsListeners.delete(listener);
+  },
+  broadcast: (metric) => {
+    latestApiMetric = metric;
+    metricsListeners.forEach((fn) => {
+      try {
+        fn(metric);
+      } catch {
+        // ignore subscriber errors
+      }
+    });
+  },
+};
+
+// Request Interceptor: Injects Bearer token and records start timestamp
 apiClient.interceptors.request.use(
   (config) => {
+    config.metadata = { startTime: performance.now() };
     const token = tokenService.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -31,9 +60,29 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handles success toasts, errors & 401 Unauthorized redirect
+// Response Interceptor: Calculates response duration, handles success toasts, errors & 401 Unauthorized redirect
 apiClient.interceptors.response.use(
   (response) => {
+    const startTime = response.config?.metadata?.startTime || performance.now();
+    const durationMs = Math.max(1, Math.round(performance.now() - startTime));
+    const serverDurationMs = response.data?.meta?.serverResponseTimeMs ?? durationMs;
+
+    response.durationMs = durationMs;
+    if (response.data && typeof response.data === 'object') {
+      if (!response.data.meta) response.data.meta = {};
+      response.data.meta.clientDurationMs = durationMs;
+      response.data.meta.serverResponseTimeMs = serverDurationMs;
+    }
+
+    // Broadcast live metric
+    apiMetricsTracker.broadcast({
+      durationMs,
+      serverDurationMs,
+      url: response.config?.url || '',
+      method: (response.config?.method || 'GET').toUpperCase(),
+      timestamp: Date.now(),
+    });
+
     const method = response.config?.method?.toUpperCase();
     const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
     const successMsg = response.data?.message;
@@ -46,6 +95,18 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    const startTime = error.config?.metadata?.startTime || performance.now();
+    const durationMs = Math.max(1, Math.round(performance.now() - startTime));
+
+    apiMetricsTracker.broadcast({
+      durationMs,
+      serverDurationMs: durationMs,
+      url: error.config?.url || '',
+      method: (error.config?.method || 'GET').toUpperCase(),
+      status: error.response?.status || 500,
+      timestamp: Date.now(),
+    });
+
     // Extract clean, human-friendly error details
     const backendError = error.response?.data?.error;
     const errorMessage =

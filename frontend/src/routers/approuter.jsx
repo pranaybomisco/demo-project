@@ -1,38 +1,12 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from './protectedroute.jsx';
-import { AppLayout } from '../views/layout/applayout.jsx';
-import { LoginPage } from '../pages/loginpage.jsx';
-import { RegisterPage } from '../pages/registerpage.jsx';
-import { DashboardPage } from '../pages/dashboardpage.jsx';
-import { ProjectsPage } from '../pages/projectspage.jsx';
-import { ProjectDetailPage } from '../pages/projectdetailpage.jsx';
-import { TasksPage } from '../pages/taskspage.jsx';
-import { ProfilePage } from '../pages/profilepage.jsx';
-import { NotFoundPage } from '../pages/notfoundpage.jsx';
-import { APP_ROUTES } from '../constants/index.js';
+// 🔄 ARCHITECTURE MODE SWITCH TARGET:
+// To demonstrate Code Splitting vs Monolithic Bundle:
+// - Optimized (Lazy Code Splitting): import { LazyRouter as RouterImplementation } from './lazyrouter.jsx';
+// - Unoptimized (Monolithic Eager):  import { LazyRouter as RouterImplementation } from './lazyrouter.jsx';
+import { LazyRouter as RouterImplementation } from './lazyrouter.jsx';
 
 export const AppRouter = () => {
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path={APP_ROUTES.LOGIN} element={<LoginPage />} />
-      <Route path={APP_ROUTES.REGISTER} element={<RegisterPage />} />
-
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path={APP_ROUTES.HOME} element={<Navigate to={APP_ROUTES.DASHBOARD} replace />} />
-          <Route path={APP_ROUTES.DASHBOARD} element={<DashboardPage />} />
-          <Route path={APP_ROUTES.PROJECTS} element={<ProjectsPage />} />
-          <Route path={APP_ROUTES.PROJECT_DETAIL} element={<ProjectDetailPage />} />
-          <Route path={APP_ROUTES.TASKS} element={<TasksPage />} />
-          <Route path={APP_ROUTES.PROFILE} element={<ProfilePage />} />
-        </Route>
-      </Route>
-
-      {/* Catch-all 404 Route */}
-      <Route path={APP_ROUTES.NOT_FOUND} element={<NotFoundPage />} />
-    </Routes>
-  );
+  return <RouterImplementation />;
 };
+
+export default AppRouter;

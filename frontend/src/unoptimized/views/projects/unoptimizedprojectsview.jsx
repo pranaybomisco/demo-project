@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProjects } from '../../../redux/slices/projectslice.js';
 import { Card } from '../../../views/components/card.jsx';
-import { FolderKanban, Users, CheckSquare, AlertTriangle } from 'lucide-react';
+import { FolderKanban, Users, CheckSquare } from 'lucide-react';
 import { Spinner } from '../../../views/components/spinner.jsx';
 
 /**
@@ -13,46 +13,31 @@ export const UnoptimizedProjectsView = () => {
   const { list: projects, isLoading } = useSelector((state) => state.projects);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
-  const [renderDuration, setRenderDuration] = useState('0.0');
-
-  const startPerfTimeRef = useRef(performance.now());
-  startPerfTimeRef.current = performance.now();
 
   useEffect(() => {
-    dispatch(fetchProjects({ limit: 100, page: 1 }));
+    dispatch(fetchProjects({ limit: 1000 }));
   }, [dispatch]);
 
-  // Synchronous calculation running inside render
-  let filtered = [...projects];
-
-  // Real CPU work on projects dataset
-  for (let i = 0; i < filtered.length; i++) {
-    const str = filtered[i].name + (filtered[i].description || '');
-    let hash = 0;
-    for (let c = 0; c < str.length; c++) {
-      hash = (hash * 31 + str.charCodeAt(c)) & 0xffffffff;
-    }
-    for (let k = 0; k < 1200; k++) {
-      hash = ((hash ^ (k * 7)) + (k & 0x3f)) & 0xffffffff;
-    }
-    filtered[i] = { ...filtered[i], _calcHash: hash };
+  // Heavy synchronous CPU blocking calculation during render
+  let totalComputed = 0;
+  for (let i = 0; i < 400000; i++) {
+    totalComputed = ((totalComputed ^ (i * 19)) + (i & 0x7f)) & 0xffffffff;
   }
 
-  if (search) {
-    filtered = filtered.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.description && p.description.toLowerCase().includes(search.toLowerCase()))
-    );
-  }
-
-  filtered.sort((a, b) => {
-    return (a[sortBy] || '').toString().localeCompare((b[sortBy] || '').toString());
-  });
-
-  useLayoutEffect(() => {
-    const elapsed = (performance.now() - startPerfTimeRef.current).toFixed(1);
-    setRenderDuration(elapsed);
-  });
+  const filtered = projects
+    .filter((p) => {
+      let match = true;
+      if (search) {
+        match = (p.name || '').toLowerCase().includes(search.toLowerCase()) ||
+                (p.description || '').toLowerCase().includes(search.toLowerCase());
+      }
+      return match;
+    })
+    .sort((a, b) => {
+      const valA = (a[sortBy] || '').toString();
+      const valB = (b[sortBy] || '').toString();
+      return valA.localeCompare(valB);
+    });
 
   if (isLoading && projects.length === 0) {
     return <Spinner fullPage message="Loading unoptimized project cards..." />;
@@ -60,13 +45,13 @@ export const UnoptimizedProjectsView = () => {
 
   return (
     <div>
-      {/* Performance Warning Banner */}
+      {/* Clean Unoptimized Warning Banner */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0.875rem 1rem',
+          gap: '0.5rem',
+          padding: '0.75rem 1rem',
           backgroundColor: 'rgba(239, 68, 68, 0.12)',
           border: '1px solid var(--color-danger)',
           borderRadius: 'var(--radius-sm)',
@@ -76,22 +61,7 @@ export const UnoptimizedProjectsView = () => {
           fontWeight: 600,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <AlertTriangle size={18} />
-          <span>[UNOPTIMIZED VIEW] In-render blocking calculations on {filtered.length} project cards</span>
-        </div>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.875rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-            padding: '0.2rem 0.5rem',
-            borderRadius: '4px',
-            border: '1px solid var(--color-danger)',
-          }}
-        >
-          Render Time: {renderDuration} ms
-        </span>
+        <span>⚠️ [UNOPTIMIZED VIEW] Rendering {filtered.length} unpaginated cards with in-render CPU work. (Live metrics in top-right HUD)</span>
       </div>
 
       {/* Non-debounced search input */}

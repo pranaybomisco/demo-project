@@ -146,6 +146,23 @@ To enforce DRY and clean component composition, all domain entities share centra
 * **Problem**: `setInterval` or `addEventListener` inside `useEffect` without returning a teardown function.
 * **Fix**: Always return a cleanup function: `return () => clearInterval(id);`.
 
+### Anti-Pattern 8: Monolithic Eager Loading (Lack of Code Splitting)
+* **Problem**: Synchronously importing every page, heavy dialog, and chart module at the application entrypoint. This bloats initial JavaScript bundles, raises Total Blocking Time (TBT), and forces clients to download code for routes they never visit.
+* **Fix**:
+  1. **Route-Level Splitting**: `React.lazy(() => import('./pages/...'))` wrapped in `<Suspense fallback={<RouteSkeleton />}>`.
+  2. **Component-Level Dynamic Imports**: Dynamically loading heavy components (e.g. `HeavyReportModal`) on-demand when requested by the user.
+* **CLI Switcher & Auditor**:
+  ```bash
+  # Switch to Optimized Route & Component Code Splitting
+  npm run switch:codesplit
+
+  # Switch to Monolithic Synchronous Eager Loading
+  npm run switch:no-codesplit
+
+  # Run Production Bundle Size & Chunk Auditor
+  npm run analyze:bundles
+  ```
+
 ---
 
 ## 5. Live Tech-Talk Demonstration Script
@@ -197,6 +214,29 @@ npm run switch:optimized
 ```
 1. Refresh the page.
 2. Type in the search box: Instant 60 FPS, silky smooth debounced input, and 0ms main-thread jank.
+
+---
+
+### Step 5: Demonstrate Route & Component Code Splitting
+```bash
+# 1. Enable Optimized Code Splitting
+npm run switch:codesplit
+
+# 2. Inspect generated chunks and bundle sizes
+npm run analyze:bundles
+```
+1. Open `http://localhost:5173/dashboard` with **Chrome DevTools > Network Tab** open (Filter: `JS`).
+2. Point out that initial load is fast and lightweight (only initial entry chunk + active page chunk).
+3. Click navigation links: **Projects**, **Tasks**, **Profile**:
+   - Watch the individual on-demand route chunks (`projectspage-*.js`, `taskspage-*.js`, `profilepage-*.js`) stream over the wire seamlessly as each page is first requested.
+4. In the top Navbar, click **"Audit Engine (Lazy Chunk)"**:
+   - Show that `heavyreportmodal-*.js` is only fetched at the moment the modal is opened!
+5. Now switch to monolithic unoptimized bundle mode:
+   ```bash
+   npm run switch:no-codesplit
+   npm run analyze:bundles
+   ```
+6. Observe that all routes are baked into a single monolithic bundle, removing dynamic on-demand loading.
 
 ---
 

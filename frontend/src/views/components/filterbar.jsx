@@ -12,6 +12,7 @@ import {
   Kanban,
 } from 'lucide-react';
 import { BUTTON_LABELS } from '../../constants/index.js';
+import { DEBOUNCE_CONFIG } from '../../config/debounce.config.js';
 
 /**
  * Common, Reusable FilterBar Component for Tasks, Projects, and other catalog pages.
@@ -26,6 +27,7 @@ export const FilterBar = ({
   search = '',
   onSearchChange,
   searchPlaceholder = 'Search...',
+  debounceMs = 2000,
   // Sorting
   sortBy,
   onSortByChange,
@@ -45,26 +47,57 @@ export const FilterBar = ({
   hasActiveFilters = false,
   onClearFilters,
 }) => {
+  const isDebounceEnabled = DEBOUNCE_CONFIG?.enabled ?? true;
+  const effectiveDelay = isDebounceEnabled ? (DEBOUNCE_CONFIG?.delayMs ?? debounceMs) : 0;
+
   const [localSearch, setLocalSearch] = useState(search);
 
   useEffect(() => {
     setLocalSearch(search);
   }, [search]);
 
+  // Auto-search: If debounce disabled, runs immediately; if enabled, delays by effectiveDelay ms
   useEffect(() => {
+    if (!isDebounceEnabled) {
+      return;
+    }
+
     const handler = setTimeout(() => {
       if (localSearch !== search) {
         onSearchChange?.(localSearch);
       }
-    }, 300);
+    }, effectiveDelay);
 
     return () => clearTimeout(handler);
-  }, [localSearch, search, onSearchChange]);
+  }, [localSearch, search, onSearchChange, isDebounceEnabled, effectiveDelay]);
+
+  const handleInputChange = (e) => {
+    const nextVal = e.target.value;
+    setLocalSearch(nextVal);
+
+    // If debounce is explicitly disabled, trigger API call synchronously on every keystroke
+    if (!isDebounceEnabled) {
+      onSearchChange?.(nextVal);
+    }
+  };
+
+  const handleApply = (e) => {
+    e?.preventDefault();
+    onSearchChange?.(localSearch);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleApply(e);
+    }
+  };
 
   const handleClearSearch = () => {
     setLocalSearch('');
     onSearchChange?.('');
   };
+
+  const isSearchPending = localSearch !== search;
 
   return (
     <div
@@ -87,54 +120,77 @@ export const FilterBar = ({
           flexWrap: 'wrap',
         }}
       >
-        {/* Search Input with Debounce */}
-        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '220px' }}>
-          <Search
-            size={16}
-            style={{
-              position: 'absolute',
-              left: '0.75rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)',
-              pointerEvents: 'none',
-            }}
-          />
-          <input
-            type="text"
-            className="input"
-            style={{
-              paddingLeft: '2.25rem',
-              paddingRight: localSearch ? '2.25rem' : '0.875rem',
-              height: '38px',
-              width: '100%',
-            }}
-            placeholder={searchPlaceholder}
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-          />
-          {localSearch && (
-            <button
-              type="button"
-              onClick={handleClearSearch}
+        {/* Search Input with Clear & Apply */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flex: '1 1 280px', minWidth: '240px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search
+              size={16}
               style={{
                 position: 'absolute',
-                right: '0.75rem',
+                left: '0.75rem',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
                 color: 'var(--text-muted)',
-                cursor: 'pointer',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
+                pointerEvents: 'none',
               }}
-              title="Clear search"
-            >
-              <X size={14} />
-            </button>
-          )}
+            />
+            <input
+              type="text"
+              className="input"
+              style={{
+                paddingLeft: '2.25rem',
+                paddingRight: localSearch ? '2.25rem' : '0.875rem',
+                height: '38px',
+                width: '100%',
+              }}
+              placeholder={searchPlaceholder}
+              value={localSearch}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+            />
+            {localSearch && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Explicit Apply Search Button */}
+          <button
+            type="button"
+            className={`btn ${isSearchPending ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={handleApply}
+            style={{
+              height: '38px',
+              padding: '0 0.875rem',
+              fontWeight: 600,
+              fontSize: '0.8125rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              whiteSpace: 'nowrap',
+            }}
+            title={isDebounceEnabled ? "Click to apply search query immediately or press Enter" : "Live search: API called on every keystroke (Debounce OFF)"}
+          >
+            <span>{isDebounceEnabled ? 'Apply' : 'Search (Live)'}</span>
+          </button>
         </div>
 
         {/* Custom Filter Selects / Dropdowns (Children slot) */}
