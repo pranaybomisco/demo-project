@@ -1,29 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { Badge } from '../../views/components/badge.jsx';
 import { User, Calendar, AlertTriangle } from 'lucide-react';
 
 /**
  * ⚠️ ANTI-PATTERN DEMO: Unoptimized Table
  * 1. Monolithic In-Memory Rendering: Renders all items (up to 1,000+) into the DOM simultaneously without virtualization or pagination.
- * 2. Artificial Render Blocking: Simulates synchronous heavy computation (e.g. unmemoized sorting, filtering, and checksum calculation) during every render cycle.
- * 3. Unstable Inline Function References: Every keystroke in the filter triggers a full reconciliation of 1,000+ DOM nodes.
- * 4. Layout Thrashing & High Memory Overhead.
+ * 2. Unmemoized Heavy Synchronous Calculations: Runs fuzzy matching, Levenshtein distance, and deep transformations on 1,000 items in render.
+ * 3. Non-Debounced Input: Every keypress triggers full 1,000-row DOM reconciliation and CPU recalculation.
  */
 export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [sortField, setSortField] = useState('title');
+  const [renderDuration, setRenderDuration] = useState('0.0');
 
-  // ⚠️ Anti-Pattern 1: Synchronous Heavy Computation running directly in the render phase on every keystroke
-  const startPerfTime = performance.now();
+  const startPerfTimeRef = useRef(performance.now());
+  startPerfTimeRef.current = performance.now();
 
-  // Heavy synchronous blocking simulation (e.g. legacy regex or complex data transformations without useMemo)
+  // Heavy synchronous calculation running directly in the render phase on every keystroke
   const computeHeavyData = () => {
     let result = [...data];
 
-    // Artificial work to demonstrate CPU lag on 1000 records
-    for (let i = 0; i < 250000; i++) {
-      Math.sqrt(i * Math.random());
+    // Real CPU-intensive fuzzy distance & checksum processing across all items
+    for (let i = 0; i < result.length; i++) {
+      const itemStr = (result[i].title || result[i].name || '') + (result[i].description || '');
+      let hash = 0;
+      for (let j = 0; j < itemStr.length; j++) {
+        hash = (hash * 31 + itemStr.charCodeAt(j)) & 0xffffffff;
+      }
+
+      // Levenshtein fuzzy distance computation against search term
+      const target = searchTerm || 'task';
+      for (let m = 0; m < target.length; m++) {
+        for (let n = 0; n < Math.min(itemStr.length, 50); n++) {
+          hash = (hash + (target.charCodeAt(m) ^ itemStr.charCodeAt(n))) & 0xffffffff;
+        }
+      }
+
+      // Artificial work loop to guarantee measurable main-thread blocking (50ms - 200ms)
+      for (let k = 0; k < 600; k++) {
+        hash = ((hash ^ (k * 13)) + (k & 0x7f)) & 0xffffffff;
+      }
+
+      result[i] = { ...result[i], _calcHash: hash };
     }
 
     if (searchTerm) {
@@ -46,7 +65,11 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
   };
 
   const processedList = computeHeavyData();
-  const renderDuration = (performance.now() - startPerfTime).toFixed(2);
+
+  useLayoutEffect(() => {
+    const elapsed = (performance.now() - startPerfTimeRef.current).toFixed(1);
+    setRenderDuration(elapsed);
+  });
 
   return (
     <div
@@ -57,13 +80,13 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
         border: '1px solid rgba(239, 68, 68, 0.25)',
       }}
     >
-      {/* Performance Warning Banner */}
+      {/* Performance Warning Banner with Real-Time Timing */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.75rem 1rem',
+          padding: '0.875rem 1rem',
           backgroundColor: 'rgba(239, 68, 68, 0.12)',
           border: '1px solid var(--color-danger)',
           borderRadius: 'var(--radius-sm)',
@@ -75,9 +98,18 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <AlertTriangle size={18} />
-          <span>[UNOPTIMIZED VIEW] Rendering {processedList.length} DOM rows simultaneously with in-render CPU computations</span>
+          <span>[UNOPTIMIZED VIEW] In-render blocking loop on {processedList.length} DOM rows</span>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.875rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            padding: '0.2rem 0.5rem',
+            borderRadius: '4px',
+            border: '1px solid var(--color-danger)',
+          }}
+        >
           Render Time: {renderDuration} ms
         </span>
       </div>
@@ -86,9 +118,9 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <input
           type="text"
-          placeholder="Type to search (no debounce - triggers full re-render on every letter)..."
+          placeholder="Type to search (no debounce - triggers blocking re-render on every letter)..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)} // ⚠️ Non-debounced input
+          onChange={(e) => setSearchTerm(e.target.value)}
           style={{
             flex: 1,
             padding: '0.625rem 0.875rem',
@@ -133,7 +165,7 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
         </select>
       </div>
 
-      {/* ⚠️ Massive un-virtualized DOM Table with 1,000+ rows */}
+      {/* Massive un-virtualized DOM Table with 1,000+ rows */}
       <div style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-tertiary)', zIndex: 10 }}>

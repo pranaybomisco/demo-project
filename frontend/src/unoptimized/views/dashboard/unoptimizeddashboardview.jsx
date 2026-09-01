@@ -1,38 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchDashboardMetrics } from '../../../redux/slices/dashboardslice.js';
 import { Card } from '../../../views/components/card.jsx';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Spinner } from '../../../views/components/spinner.jsx';
 
 /**
  * ⚠️ UNOPTIMIZED DASHBOARD VIEW
- * 1. Memory Leak & Polling Anti-Pattern: Aggressive interval triggering continuous state re-renders without debounce or cancellation checks.
- * 2. In-render Metrics Aggregation: Recomputes entire statistics on every single tick.
- * 3. Layout Thrashing & CPU Spike.
  */
 export const UnoptimizedDashboardView = () => {
   const dispatch = useDispatch();
   const { metrics, isLoading } = useSelector((state) => state.dashboard);
   const [renderCount, setRenderCount] = useState(0);
+  const [renderDuration, setRenderDuration] = useState('0.0');
+
+  const startPerfTimeRef = useRef(performance.now());
+  startPerfTimeRef.current = performance.now();
 
   useEffect(() => {
     dispatch(fetchDashboardMetrics());
 
-    // ⚠️ Unoptimized rapid polling creating constant re-render load
+    // Aggressive polling causing continuous re-renders
     const interval = setInterval(() => {
       setRenderCount((prev) => prev + 1);
-    }, 1200);
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [dispatch]);
 
-  // ⚠️ Artificial in-render blocking loop simulating un-memoized heavy dashboard charts
-  const startPerfTime = performance.now();
-  for (let i = 0; i < 200000; i++) {
-    Math.tan(i);
+  // Real CPU work in dashboard render
+  let totalComputed = 0;
+  for (let i = 0; i < 400000; i++) {
+    totalComputed = ((totalComputed ^ (i * 17)) + (i & 0xff)) & 0xffffffff;
   }
-  const renderDuration = (performance.now() - startPerfTime).toFixed(2);
+
+  useLayoutEffect(() => {
+    const elapsed = (performance.now() - startPerfTimeRef.current).toFixed(1);
+    setRenderDuration(elapsed);
+  });
 
   if (isLoading && !metrics) {
     return <Spinner fullPage message="Loading unoptimized dashboard..." />;
@@ -46,7 +51,7 @@ export const UnoptimizedDashboardView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.75rem 1rem',
+          padding: '0.875rem 1rem',
           backgroundColor: 'rgba(239, 68, 68, 0.12)',
           border: '1px solid var(--color-danger)',
           borderRadius: 'var(--radius-sm)',
@@ -58,9 +63,18 @@ export const UnoptimizedDashboardView = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <AlertTriangle size={18} />
-          <span>[UNOPTIMIZED VIEW] Aggressive 1.2s state polling trigger & unmemoized widget re-renders (Re-renders: {renderCount})</span>
+          <span>[UNOPTIMIZED VIEW] Aggressive state polling & unmemoized widget re-renders (Re-renders: {renderCount})</span>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.875rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            padding: '0.2rem 0.5rem',
+            borderRadius: '4px',
+            border: '1px solid var(--color-danger)',
+          }}
+        >
           Render Time: {renderDuration} ms
         </span>
       </div>

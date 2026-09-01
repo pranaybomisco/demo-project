@@ -1,36 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProjects } from '../../../redux/slices/projectslice.js';
 import { Card } from '../../../views/components/card.jsx';
-import { Badge } from '../../../views/components/badge.jsx';
 import { FolderKanban, Users, CheckSquare, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../../../views/components/spinner.jsx';
 
 /**
  * ⚠️ UNOPTIMIZED PROJECTS VIEW
- * 1. Missing Pagination & URL Query Sync: Hardcodes limit to 100 projects.
- * 2. Unmemoized Filter & Sort: Recalculates heavy nested objects on every render.
- * 3. Frequent Re-renders: Every keystroke causes 45+ complex card components to re-render.
  */
 export const UnoptimizedProjectsView = () => {
   const dispatch = useDispatch();
   const { list: projects, isLoading } = useSelector((state) => state.projects);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [renderDuration, setRenderDuration] = useState('0.0');
+
+  const startPerfTimeRef = useRef(performance.now());
+  startPerfTimeRef.current = performance.now();
 
   useEffect(() => {
-    // ⚠️ Fetches all projects without pagination
     dispatch(fetchProjects({ limit: 100, page: 1 }));
   }, [dispatch]);
 
-  // ⚠️ Synchronous calculation running inside render
-  const startPerfTime = performance.now();
-
+  // Synchronous calculation running inside render
   let filtered = [...projects];
 
-  // Heavy synchronous blocking simulation
-  for (let i = 0; i < 150000; i++) {
-    Math.sin(i);
+  // Real CPU work on projects dataset
+  for (let i = 0; i < filtered.length; i++) {
+    const str = filtered[i].name + (filtered[i].description || '');
+    let hash = 0;
+    for (let c = 0; c < str.length; c++) {
+      hash = (hash * 31 + str.charCodeAt(c)) & 0xffffffff;
+    }
+    for (let k = 0; k < 1200; k++) {
+      hash = ((hash ^ (k * 7)) + (k & 0x3f)) & 0xffffffff;
+    }
+    filtered[i] = { ...filtered[i], _calcHash: hash };
   }
 
   if (search) {
@@ -44,7 +49,10 @@ export const UnoptimizedProjectsView = () => {
     return (a[sortBy] || '').toString().localeCompare((b[sortBy] || '').toString());
   });
 
-  const renderDuration = (performance.now() - startPerfTime).toFixed(2);
+  useLayoutEffect(() => {
+    const elapsed = (performance.now() - startPerfTimeRef.current).toFixed(1);
+    setRenderDuration(elapsed);
+  });
 
   if (isLoading && projects.length === 0) {
     return <Spinner fullPage message="Loading unoptimized project cards..." />;
@@ -58,7 +66,7 @@ export const UnoptimizedProjectsView = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.75rem 1rem',
+          padding: '0.875rem 1rem',
           backgroundColor: 'rgba(239, 68, 68, 0.12)',
           border: '1px solid var(--color-danger)',
           borderRadius: 'var(--radius-sm)',
@@ -70,9 +78,18 @@ export const UnoptimizedProjectsView = () => {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <AlertTriangle size={18} />
-          <span>[UNOPTIMIZED VIEW] In-render blocking loop on {filtered.length} project cards</span>
+          <span>[UNOPTIMIZED VIEW] In-render blocking calculations on {filtered.length} project cards</span>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.875rem',
+            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+            padding: '0.2rem 0.5rem',
+            borderRadius: '4px',
+            border: '1px solid var(--color-danger)',
+          }}
+        >
           Render Time: {renderDuration} ms
         </span>
       </div>
@@ -81,7 +98,7 @@ export const UnoptimizedProjectsView = () => {
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
         <input
           type="text"
-          placeholder="Search projects (non-debounced, triggers immediate re-renders)..."
+          placeholder="Search projects (non-debounced, triggers immediate blocking re-renders)..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
