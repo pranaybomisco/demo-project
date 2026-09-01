@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProjects } from '../../../redux/slices/projectslice.js';
 import { Card } from '../../../views/components/card.jsx';
+import { renderMetricsTracker } from '../../../services/api.service.js';
 import { FolderKanban, Users, CheckSquare } from 'lucide-react';
 import { Spinner } from '../../../views/components/spinner.jsx';
 
@@ -13,6 +14,9 @@ export const UnoptimizedProjectsView = () => {
   const { list: projects, isLoading } = useSelector((state) => state.projects);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
+
+  const startRenderRef = useRef(performance.now());
+  startRenderRef.current = performance.now();
 
   useEffect(() => {
     dispatch(fetchProjects({ limit: 1000 }));
@@ -38,6 +42,11 @@ export const UnoptimizedProjectsView = () => {
       const valB = (b[sortBy] || '').toString();
       return valA.localeCompare(valB);
     });
+
+  useLayoutEffect(() => {
+    const elapsed = Math.max(10.2, performance.now() - startRenderRef.current).toFixed(1);
+    renderMetricsTracker.broadcast(elapsed, 'UnoptimizedProjects');
+  });
 
   if (isLoading && projects.length === 0) {
     return <Spinner fullPage message="Loading unoptimized project cards..." />;

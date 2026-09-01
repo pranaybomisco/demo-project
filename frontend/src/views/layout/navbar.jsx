@@ -60,11 +60,12 @@ export const Navbar = ({
           }}
         >
           <Sparkles size={14} />
-          <span className="header-badge-text">Clean Architecture</span>
+          {/* <span className="header-badge-text">Clean Architecture</span> */}
         </div>
 
         {/* Dynamic Code Splitting Trigger Demo */}
         <button
+          disabled
           type="button"
           onClick={() => setIsAuditModalOpen(true)}
           className="btn btn-secondary"
@@ -79,7 +80,7 @@ export const Navbar = ({
           title="Demonstrates on-demand component chunk loading via dynamic import()"
         >
           <Cpu size={13} />
-          <span>Audit Engine (Lazy Chunk)</span>
+          {/* <span>Audit Engine (Lazy Chunk)</span> */}
         </button>
       </div>
 

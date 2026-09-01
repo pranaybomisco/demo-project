@@ -17,7 +17,7 @@ export const App = () => {
           <AuthProvider>
             <ToastProvider>
               <RoutePreloader />
-              <TelemetryOverlay />
+              {/* <TelemetryOverlay /> */}
               <AppRouter />
             </ToastProvider>
           </AuthProvider>

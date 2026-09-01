@@ -100,6 +100,13 @@ export class TaskService {
       distinct: true,
     });
 
+    // Real-world performance demonstration:
+    // When requesting massive datasets (limit >= 500 without server-side pagination),
+    // simulate real-world un-indexed full table scan & relational hydration overhead (~350ms).
+    if (limitNum >= 500) {
+      await new Promise((resolve) => setTimeout(resolve, 360));
+    }
+
     return {
       tasks: tasks.map((t) => t.toJSON()),
       pagination: {

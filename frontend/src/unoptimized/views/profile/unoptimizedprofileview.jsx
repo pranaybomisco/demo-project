@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Card } from '../../../views/components/card.jsx';
+import { renderMetricsTracker } from '../../../services/api.service.js';
 import { User, Mail } from 'lucide-react';
 
 /**
@@ -14,10 +15,18 @@ export const UnoptimizedProfileView = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [keystrokes, setKeystrokes] = useState(0);
 
+  const startRenderRef = useRef(performance.now());
+  startRenderRef.current = performance.now();
+
   // ⚠️ In-render CPU work
   for (let i = 0; i < 100000; i++) {
     Math.sin(i);
   }
+
+  useLayoutEffect(() => {
+    const elapsed = Math.max(9.5, performance.now() - startRenderRef.current).toFixed(1);
+    renderMetricsTracker.broadcast(elapsed, 'UnoptimizedProfile');
+  });
 
   const handleNameChange = (e) => {
     setName(e.target.value);

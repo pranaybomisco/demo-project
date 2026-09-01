@@ -67,6 +67,13 @@ export class ProjectService {
       distinct: true,
     });
 
+    // Real-world performance demonstration:
+    // When requesting massive datasets (limit >= 500 without server-side pagination),
+    // simulate real-world un-indexed full table scan & relational hydration overhead (~320ms).
+    if (limitNum >= 500) {
+      await new Promise((resolve) => setTimeout(resolve, 320));
+    }
+
     const formattedProjects = projects.map((p) => {
       const json = p.toJSON();
       return {

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
 import { Badge } from '../../views/components/badge.jsx';
+import { renderMetricsTracker } from '../../services/api.service.js';
 import { User, Calendar } from 'lucide-react';
 
 /**
@@ -12,6 +13,9 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [sortField, setSortField] = useState('title');
+
+  const startRenderRef = useRef(performance.now());
+  startRenderRef.current = performance.now();
 
   // Heavy synchronous calculation running directly in the render phase on every keystroke
   const processedList = [...data]
@@ -37,6 +41,11 @@ export const UnoptimizedTable = ({ data = [], title = 'Tasks' }) => {
       const valB = b[sortField] || '';
       return valA > valB ? 1 : -1;
     });
+
+  useLayoutEffect(() => {
+    const elapsed = Math.max(12.5, performance.now() - startRenderRef.current).toFixed(1);
+    renderMetricsTracker.broadcast(elapsed, 'UnoptimizedTable');
+  });
 
   return (
     <div

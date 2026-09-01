@@ -1,10 +1,11 @@
 import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useApiLatency } from '../../hooks/useApiLatency.js';
+import { renderMetricsTracker } from '../../services/api.service.js';
 import { Activity, Server, Cpu, RefreshCw, ChevronUp, ChevronDown, Sparkles, Layers, Zap } from 'lucide-react';
 
 /**
- * Floating Telemetry Overlay HUD fixed to the top-right corner of the page.
+ * Floating Telemetry Overlay HUD.
  * Displays real-time API Latency, React Render Timing, Re-renders, and Network health.
  */
 export const TelemetryOverlay = () => {
@@ -21,14 +22,32 @@ export const TelemetryOverlay = () => {
   const apiDuration = apiMetric?.durationMs || 0;
   const serverDuration = apiMetric?.serverDurationMs || apiDuration;
 
+  // Subscribe to component-level render broadcasts
+  useEffect(() => {
+    return renderMetricsTracker.subscribe((metric) => {
+      if (metric?.durationMs) {
+        setRenderTime(metric.durationMs);
+        if (renderSpanRef.current) {
+          renderSpanRef.current.textContent = `${metric.durationMs} ms`;
+        }
+      }
+    });
+  }, []);
+
   // Measure render & DOM paint duration on every route and state change
   startTimeRef.current = performance.now();
 
   useLayoutEffect(() => {
     const elapsed = Math.max(0.1, performance.now() - startTimeRef.current).toFixed(1);
-    setRenderTime(elapsed);
+    const lastComponent = renderMetricsTracker.getLatest();
+    // Use the latest broadcasted render duration if recent (within 500ms), otherwise local elapsed
+    const displayVal = (Date.now() - lastComponent.timestamp < 500 && parseFloat(lastComponent.durationMs) > parseFloat(elapsed))
+      ? lastComponent.durationMs
+      : elapsed;
+
+    setRenderTime(displayVal);
     if (renderSpanRef.current) {
-      renderSpanRef.current.textContent = `${elapsed} ms`;
+      renderSpanRef.current.textContent = `${displayVal} ms`;
     }
   });
 

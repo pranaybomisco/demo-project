@@ -47,6 +47,28 @@ export const apiMetricsTracker = {
   },
 };
 
+// Global UI render latency tracker
+const renderListeners = new Set();
+let latestRenderMetric = { durationMs: '1.2', component: '', timestamp: Date.now() };
+
+export const renderMetricsTracker = {
+  getLatest: () => latestRenderMetric,
+  subscribe: (listener) => {
+    renderListeners.add(listener);
+    return () => renderListeners.delete(listener);
+  },
+  broadcast: (durationMs, component = '') => {
+    latestRenderMetric = { durationMs: String(durationMs), component, timestamp: Date.now() };
+    renderListeners.forEach((fn) => {
+      try {
+        fn(latestRenderMetric);
+      } catch {
+        // ignore
+      }
+    });
+  },
+};
+
 // Request Interceptor: Injects Bearer token and records start timestamp
 apiClient.interceptors.request.use(
   (config) => {
