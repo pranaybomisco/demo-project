@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Modal } from '../components/modal.jsx';
+import { FormModal } from '../components/formmodal.jsx';
 import { Input } from '../components/input.jsx';
 import { Select } from '../components/select.jsx';
 import { Textarea } from '../components/textarea.jsx';
-import { Button } from '../components/button.jsx';
 import {
   BUTTON_LABELS,
   PLACEHOLDERS,
@@ -96,86 +95,78 @@ export const TaskModal = ({
   ];
 
   return (
-    <Modal
+    <FormModal
       isOpen={isOpen}
       onClose={onClose}
+      onSubmit={handleSubmit}
       title={isEditing ? 'Edit Task' : 'Create New Task'}
       maxWidth="600px"
+      submitLabel={isEditing ? BUTTON_LABELS.SAVE_CHANGES : BUTTON_LABELS.CREATE_TASK}
+      isLoading={isLoading}
     >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-        <Input
-          label="Task Title"
-          name="title"
-          placeholder={PLACEHOLDERS.TASK_TITLE}
-          value={formData.title}
+      <Input
+        label="Task Title"
+        name="title"
+        placeholder={PLACEHOLDERS.TASK_TITLE}
+        value={formData.title}
+        onChange={handleChange}
+        required
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="grid-2-col">
+        <Select
+          label="Project"
+          name="projectId"
+          options={projectOptions}
+          value={formData.projectId}
           onChange={handleChange}
+          disabled={isEditing || !!defaultProjectId}
           required
         />
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <Select
-            label="Project"
-            name="projectId"
-            options={projectOptions}
-            value={formData.projectId}
-            onChange={handleChange}
-            disabled={isEditing || !!defaultProjectId}
-            required
-          />
+        <Select
+          label="Assignee"
+          name="assigneeId"
+          options={memberOptions}
+          value={formData.assigneeId}
+          onChange={handleChange}
+        />
+      </div>
 
-          <Select
-            label="Assignee"
-            name="assigneeId"
-            options={memberOptions}
-            value={formData.assigneeId}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-          <Select
-            label="Status"
-            name="status"
-            options={statusOptions}
-            value={formData.status}
-            onChange={handleChange}
-          />
-
-          <Select
-            label="Priority"
-            name="priority"
-            options={priorityOptions}
-            value={formData.priority}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Due Date"
-            name="dueDate"
-            type="date"
-            value={formData.dueDate}
-            onChange={handleChange}
-          />
-        </div>
-
-        <Textarea
-          label="Description"
-          name="description"
-          placeholder={PLACEHOLDERS.TASK_DESC}
-          rows={3}
-          value={formData.description}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }} className="grid-2-col">
+        <Select
+          label="Status"
+          name="status"
+          options={statusOptions}
+          value={formData.status}
           onChange={handleChange}
         />
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
-            {BUTTON_LABELS.CANCEL}
-          </Button>
-          <Button type="submit" variant="primary" isLoading={isLoading}>
-            {isEditing ? BUTTON_LABELS.SAVE_CHANGES : BUTTON_LABELS.CREATE_TASK}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+        <Select
+          label="Priority"
+          name="priority"
+          options={priorityOptions}
+          value={formData.priority}
+          onChange={handleChange}
+        />
+
+        <Input
+          label="Due Date"
+          name="dueDate"
+          type="date"
+          value={formData.dueDate}
+          onChange={handleChange}
+        />
+      </div>
+
+      <Textarea
+        label="Description"
+        name="description"
+        placeholder={PLACEHOLDERS.TASK_DESC}
+        rows={3}
+        value={formData.description}
+        onChange={handleChange}
+      />
+    </FormModal>
   );
 };
