@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { DashboardView } from '../views/dashboard/dashboardview.jsx';
+import { UnoptimizedDashboardView as DashboardView } from '../unoptimized/views/dashboard/unoptimizeddashboardview.jsx';
 import { createTask } from '../redux/slices/taskslice.js';
 import { createProject, fetchProjects } from '../redux/slices/projectslice.js';
 import { fetchDashboardMetrics } from '../redux/slices/dashboardslice.js';

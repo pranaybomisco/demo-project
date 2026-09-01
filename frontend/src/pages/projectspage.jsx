@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { ProjectsView } from '../views/projects/projectsview.jsx';
+import { UnoptimizedProjectsView as ProjectsView } from '../unoptimized/views/projects/unoptimizedprojectsview.jsx';
 import { Button } from '../views/components/button.jsx';
 import { Plus } from 'lucide-react';
 import { BUTTON_LABELS, UI_MESSAGES, ROLES } from '../constants/index.js';

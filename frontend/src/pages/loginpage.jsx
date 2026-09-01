@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { LoginView } from '../views/auth/loginview.jsx';
+import { UnoptimizedLoginView as LoginView } from '../unoptimized/views/auth/unoptimizedloginview.jsx';
 import { ThemeToggle } from '../views/components/themetoggle.jsx';
 import { Layers } from 'lucide-react';
 import { APP_ROUTES, UI_MESSAGES } from '../constants/index.js';

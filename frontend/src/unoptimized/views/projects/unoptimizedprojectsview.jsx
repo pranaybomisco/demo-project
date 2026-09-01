@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProjects } from '../../../redux/slices/projectslice.js';
+import { fetchProjects, createProject, updateProject } from '../../../redux/slices/projectslice.js';
 import { Card } from '../../../views/components/card.jsx';
+import { ProjectModal } from '../../../views/projects/projectmodal.jsx';
 import { renderMetricsTracker } from '../../../services/api.service.js';
 import { FolderKanban, Users, CheckSquare } from 'lucide-react';
 import { Spinner } from '../../../views/components/spinner.jsx';
@@ -9,7 +10,12 @@ import { Spinner } from '../../../views/components/spinner.jsx';
 /**
  * ⚠️ UNOPTIMIZED PROJECTS VIEW
  */
-export const UnoptimizedProjectsView = () => {
+export const UnoptimizedProjectsView = ({
+  isModalOpen = false,
+  setIsModalOpen,
+  selectedProject = null,
+  setSelectedProject,
+}) => {
   const dispatch = useDispatch();
   const { list: projects, isLoading } = useSelector((state) => state.projects);
   const [search, setSearch] = useState('');
@@ -21,6 +27,17 @@ export const UnoptimizedProjectsView = () => {
   useEffect(() => {
     dispatch(fetchProjects({ limit: 1000 }));
   }, [dispatch]);
+
+  const handleProjectSubmit = async (formData) => {
+    if (selectedProject) {
+      await dispatch(updateProject({ id: selectedProject.id, data: formData }));
+    } else {
+      await dispatch(createProject(formData));
+    }
+    setIsModalOpen?.(false);
+    setSelectedProject?.(null);
+    dispatch(fetchProjects({ limit: 1000 }));
+  };
 
   // Heavy synchronous CPU blocking calculation during render
   let totalComputed = 0;
@@ -150,6 +167,17 @@ export const UnoptimizedProjectsView = () => {
           </Card>
         ))}
       </div>
+
+      {/* Project Creation & Edit Modal */}
+      <ProjectModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen?.(false);
+          setSelectedProject?.(null);
+        }}
+        onSubmit={handleProjectSubmit}
+        project={selectedProject}
+      />
     </div>
   );
 };
