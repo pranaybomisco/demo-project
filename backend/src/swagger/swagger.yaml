@@ -1,0 +1,518 @@
+openapi: 3.0.0
+info:
+  title: Team Task Manager REST API
+  description: Production-grade REST API demonstrating JavaScript MVC + Service architecture, PostgreSQL, JWT Authentication, and Developer Best Practices.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local Development Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation completed successfully
+        data:
+          type: object
+        meta:
+          type: object
+
+    ApiError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid input data
+            details:
+              type: array
+              items:
+                type: object
+            requestId:
+              type: string
+              example: a82d2c14-5231-4a1e-b83c-91bc7df35b42
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MANAGER, MEMBER]
+        avatarUrl:
+          type: string
+          nullable: true
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        ownerId:
+          type: string
+        owner:
+          $ref: '#/components/schemas/User'
+        members:
+          type: array
+          items:
+            type: object
+        _count:
+          type: object
+          properties:
+            tasks:
+              type: integer
+            members:
+              type: integer
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [TODO, IN_PROGRESS, DONE]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+        projectId:
+          type: string
+        creatorId:
+          type: string
+        assigneeId:
+          type: string
+          nullable: true
+        project:
+          type: object
+        creator:
+          $ref: '#/components/schemas/User'
+        assignee:
+          $ref: '#/components/schemas/User'
+
+paths:
+  /health:
+    get:
+      summary: Service Healthcheck
+      tags: [System]
+      responses:
+        200:
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  example: user@example.com
+                password:
+                  type: string
+                  example: Password123!
+                name:
+                  type: string
+                  example: John Doe
+                role:
+                  type: string
+                  enum: [ADMIN, MANAGER, MEMBER]
+                  default: MEMBER
+      responses:
+        201:
+          description: User registered successfully
+        400:
+          description: Validation error
+        409:
+          description: Email already exists
+
+  /auth/login:
+    post:
+      summary: Authenticate user & get JWT token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: admin@example.com
+                password:
+                  type: string
+                  example: Password123!
+      responses:
+        200:
+          description: Login successful
+        401:
+          description: Invalid email or password
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user profile
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User profile retrieved
+        401:
+          description: Unauthorized
+
+  /projects:
+    get:
+      summary: List accessible projects
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        200:
+          description: Projects list retrieved
+    post:
+      summary: Create a new project
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Cloud Infrastructure Migration
+                description:
+                  type: string
+                  example: Modernizing cloud architecture
+                memberEmails:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        201:
+          description: Project created successfully
+
+  /projects/{id}:
+    get:
+      summary: Get project details by ID
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Project details retrieved
+        404:
+          description: Project not found
+    patch:
+      summary: Update project details
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        200:
+          description: Project updated
+    delete:
+      summary: Delete project
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Project deleted
+
+  /projects/{id}/members:
+    post:
+      summary: Add member to project
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [ADMIN, MANAGER, MEMBER]
+                  default: MEMBER
+      responses:
+        201:
+          description: Member added
+
+  /projects/{id}/members/{userId}:
+    delete:
+      summary: Remove member from project
+      tags: [Projects]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Member removed
+
+  /tasks:
+    get:
+      summary: List, filter and sort tasks
+      tags: [Tasks]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: projectId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [TODO, IN_PROGRESS, DONE]
+        - in: query
+          name: priority
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            default: created_at
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: DESC
+      responses:
+        200:
+          description: Tasks retrieved
+    post:
+      summary: Create a new task
+      tags: [Tasks]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, projectId]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                projectId:
+                  type: string
+                status:
+                  type: string
+                  enum: [TODO, IN_PROGRESS, DONE]
+                  default: TODO
+                priority:
+                  type: string
+                  enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                  default: MEDIUM
+                dueDate:
+                  type: string
+                  format: date-time
+                assigneeId:
+                  type: string
+      responses:
+        201:
+          description: Task created
+
+  /tasks/{id}:
+    get:
+      summary: Get task by ID
+      tags: [Tasks]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Task retrieved
+    patch:
+      summary: Update task
+      tags: [Tasks]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [TODO, IN_PROGRESS, DONE]
+                priority:
+                  type: string
+                  enum: [LOW, MEDIUM, HIGH, CRITICAL]
+                dueDate:
+                  type: string
+                assigneeId:
+                  type: string
+      responses:
+        200:
+          description: Task updated
+    delete:
+      summary: Delete task
+      tags: [Tasks]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: Task deleted
+
+  /dashboard:
+    get:
+      summary: Get aggregated dashboard analytics
+      tags: [Dashboard]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Metrics retrieved
