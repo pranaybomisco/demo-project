@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UnoptimizedTasksView as TasksView } from '../unoptimized/views/tasks/unoptimizedtasksview.jsx';
+import { TasksView } from '../views/tasks/tasksview.jsx';
 import { Button } from '../views/components/button.jsx';
 import { Plus } from 'lucide-react';
 import { BUTTON_LABELS, UI_MESSAGES } from '../constants/index.js';

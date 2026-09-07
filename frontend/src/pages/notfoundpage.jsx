@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnoptimizedNotFoundView as NotFoundView } from '../unoptimized/views/layout/unoptimizednotfoundview.jsx';
+import { NotFoundView } from '../views/layout/notfoundview.jsx';
 
 export const NotFoundPage = () => {
   return <NotFoundView />;

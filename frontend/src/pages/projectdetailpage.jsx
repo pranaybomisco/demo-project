@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { UnoptimizedProjectDetailView as ProjectDetailView } from '../unoptimized/views/projects/unoptimizedprojectdetailview.jsx';
+import { ProjectDetailView } from '../views/projects/projectdetailview.jsx';
 
 export const ProjectDetailPage = () => {
   const { id } = useParams();

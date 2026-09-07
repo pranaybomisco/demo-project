@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnoptimizedProfileView as ProfileView } from '../unoptimized/views/profile/unoptimizedprofileview.jsx';
+import { ProfileView } from '../views/profile/profileview.jsx';
 import { UI_MESSAGES } from '../constants/index.js';
 
 export const ProfilePage = () => {

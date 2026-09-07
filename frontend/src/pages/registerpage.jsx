@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { UnoptimizedRegisterView as RegisterView } from '../unoptimized/views/auth/unoptimizedregisterview.jsx';
+import { RegisterView } from '../views/auth/registerview.jsx';
 import { ThemeToggle } from '../views/components/themetoggle.jsx';
 import { Layers } from 'lucide-react';
 import { APP_ROUTES, UI_MESSAGES } from '../constants/index.js';
