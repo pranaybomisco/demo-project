@@ -6,13 +6,18 @@ on:
 
 permissions:
   pull-requests: write
-  contents: read
+  contents: write
+  issues: write
 
 jobs:
   convert-to-draft:
     name: Convert PR to Draft
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
+    permissions:
+      pull-requests: write
+      contents: write
+      issues: write
     steps:
       - name: Move Pull Request to Draft
         env:
