@@ -33,3 +33,47 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
           gh pr ready "$PR_URL" --undo
+
+  build-and-archive-docker:
+    name: Build & Archive Docker Image (${{ matrix.service.name }})
+    runs-on: [self-hosted, Linux, X64]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+            image_name: taskmanager-backend
+          - name: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+            image_name: taskmanager-frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (Multi-stage)
+        run: |
+          docker build \
+            --tag ${{ matrix.service.image_name }}:${{ github.sha }} \
+            --tag ${{ matrix.service.image_name }}:latest \
+            -f ${{ matrix.service.dockerfile }} \
+            ${{ matrix.service.context }}
+
+      - name: Save Docker image to archive
+        run: |
+          docker save -o ${{ matrix.service.name }}-image.tar ${{ matrix.service.image_name }}:${{ github.sha }} ${{ matrix.service.image_name }}:latest
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-${{ matrix.service.name }}-image
+          path: ${{ matrix.service.name }}-image.tar
+          retention-days: 7
+
