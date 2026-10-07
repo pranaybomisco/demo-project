@@ -12,12 +12,15 @@ permissions:
 jobs:
   convert-to-draft:
     name: Convert PR to Draft
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
+
     if: github.event.pull_request.draft == false
+
     permissions:
       pull-requests: write
       contents: write
       issues: write
+
     steps:
       - name: Move Pull Request to Draft
         env:
