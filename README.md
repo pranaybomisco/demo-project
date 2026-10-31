@@ -156,3 +156,5 @@ All seeded demo accounts use password: `Password123!`
 | `npm run install:all` | Installs dependencies across root, backend, and frontend packages |
 | `npm run docker:up` | Builds and starts multi-container Docker Compose environment |
 | `npm run docker:down` | Stops and removes Docker Compose containers |
+
+
